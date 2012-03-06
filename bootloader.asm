@@ -41,6 +41,7 @@ _start:
 	add ax, 288		; for the segment register --> 4096 (stack) + 512 (bootloader) / 16 bytes per paragraph 
 	mov ss, ax		
 	mov sp, 0x1000		
+	mov bp, 0x1000
 
 	mov ax, 0x07c0
 	mov ds, ax		; point the data segment to the same place
@@ -57,6 +58,7 @@ _start:
 	mov cx, welcomeMsgSize	; length of the message
 	mov dx, 0		; top left corner
 	call printString
+	pop bp
 
 	jmp $
 
