@@ -45,8 +45,18 @@ _start:
 	mov ax, 0x07c0
 	mov ds, ax		; point the data segment to the same place
 
-	mov si, welcomeMsg
-	call printTele
+	mov es, ax		; same thing with es
+
+	mov ah, 0x00		; change video mode
+	mov al, 0x10		; to graphics, 640x350 16 bit color
+	int 0x10		; call the bios
+	
+	push bp
+	mov bp, welcomeMsg
+	mov bl, 0x03		; display it in cyan
+	mov cx, welcomeMsgSize	; length of the message
+	mov dx, 0		; top left corner
+	call printString
 
 	jmp $
 
@@ -66,6 +76,14 @@ printTele:
 
 	.done:
 		ret
+
+printString:
+	mov ah, 0x13		; print string BIOS call
+	mov al, 0x01		; update the cursor and make the attribute in bl apply to all characters
+	int 0x10		;make the call
+	ret
+
+	
 
 times 510-($-$$) db 0		;pad the rest of the disk with 0's
 dw 0xAA55			;This is the standard boot signature for floppy drives
