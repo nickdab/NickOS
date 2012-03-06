@@ -99,12 +99,29 @@ printString:
 newline:
 	mov ah, 0x03		;read where the cursor is at
 	int 0x10		;make the call
+
+	cmp dh, 23
+	jg .scrollUp
 	
 	add dh, 1		;go down 1 row
 	mov dl, 0		;back to the very left
 	mov ah, 0x02		;change the cursor position
 	int 0x10		;make the call
 	ret
+	
+	.scrollUp:
+		mov ah, 0x06	;scroll up
+		mov al, 1	;scroll 1 line
+		mov ch, 0	;0x0 is upper left corner
+		mov cl, 0
+		mov dh, 24	;24x79 is lower right corner
+		mov dl, 79
+		int 0x10
+		
+		mov ah, 0x02	;update the cursor to column 0
+		mov dl, 0
+		int 0x10
+		ret
 
 printChars:
 	mov ah, 0x09
