@@ -52,18 +52,25 @@ _start:
 	mov al, 0x10		; to graphics, 640x350 16 bit color
 	int 0x10		; call the bios
 	
-	push bp
-	mov bp, welcomeMsg
+	
+	mov si, welcomeMsg
 	mov bl, 0x03		; display it in cyan
 	mov cx, welcomeMsgSize	; length of the message
 	mov dx, 0		; top left corner
 	call printString
-	pop bp
+
+	call newline
+	call newline
+	
+	call console		
 
 	jmp $
 
-	welcomeMsg db "Welcome to Nicks Operating System.",0
+	welcomeMsg db "Welcome to Nick",39,"s Operating System.",0
 	welcomeMsgSize equ $-welcomeMsg
+	
+	prompt db ">> "
+	promptSize equ $-prompt
 
 printTele:
 	mov ah, 0x0E		; this tells the BIOS we want to teletype print a character
@@ -82,9 +89,93 @@ printTele:
 printString:
 	mov ah, 0x13		; print string BIOS call
 	mov al, 0x01		; update the cursor and make the attribute in bl apply to all characters
+
+	push bp
+	mov bp, si
+	int 0x10		;make the call
+	pop bp
+	ret
+
+newline:
+	mov ah, 0x03		;read where the cursor is at
+	int 0x10		;make the call
+	
+	add dh, 1		;go down 1 row
+	mov dl, 0		;back to the very left
+	mov ah, 0x02		;change the cursor position
 	int 0x10		;make the call
 	ret
 
+printChars:
+	mov ah, 0x09
+	
+	.printChar:
+		lodsb
+		cmp al, 0
+		je short .done
+		;else
+		mov cx, 1
+		int 0x10
+		jmp short .printChar
+
+	.done:
+		ret
+
+printChar:
+	mov ah, 0x09
+	mov cx, 1
+	int 0x10
+	ret
+	
+console:
+	.printPrompt:
+		mov si, prompt	;">>"
+		mov bl, 0x0F	; print it in white
+		mov cx, promptSize;
+		call printString
+
+		mov ah, 0x02	;change cursor position
+		mov dl, 3	
+		int 0x10
+	
+	.readStdIn:
+		mov ah, 0x10	;wait for keyboard input
+		int 0x16	;make the call to the bios
+
+		cmp al, 13	; "enter" key
+		je .carriageReturn
+		cmp al, 8	; "backspace key"
+		je .backspace
+		
+		call printChar	; write character
+		
+		mov ah, 0x02	; move cursor
+		inc dl		; 1 column to the right
+		int 0x10
+		
+		jmp short .readStdIn
+
+		.carriageReturn:
+			call newline
+			jmp short .printPrompt
+
+		.backspace:
+			mov ah, 0x03	;read cursor position
+			int 0x10	
+
+			cmp dl, 3	; we don't want to overwrite the prompt
+			je short .readStdIn			
+
+			mov ah, 0x02	;move cursor
+			dec dl		;one column to the left
+			int 0x10
+
+			mov al, 32	;space character
+			call printChar	
+			jmp short .readStdIn
+
+			
+	
 	
 
 times 510-($-$$) db 0		;pad the rest of the disk with 0's
