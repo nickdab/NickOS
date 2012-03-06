@@ -3,7 +3,7 @@
 ; Nick Operating System Bootloader
 ; Copyright (C) Nick Birney GNU General Public License
 ; Created: 3/5/2012
-; Updated: 3/5/2012
+; Updated: 3/6/2012
 ; ---------------------------------------------------------
 
 	BITS 16
