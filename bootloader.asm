@@ -100,8 +100,8 @@ newline:
 	mov ah, 0x03		;read where the cursor is at
 	int 0x10		;make the call
 
-	cmp dh, 23
-	jg .scrollUp
+	cmp dh, 23		;last call put cursor row position in dh
+	jg .scrollUp		;if we've gone over the amount of rows available on screen (23), we scroll up
 	
 	add dh, 1		;go down 1 row
 	mov dl, 0		;back to the very left
@@ -120,7 +120,7 @@ newline:
 		
 		mov ah, 0x02	;update the cursor to column 0
 		mov dl, 0
-		int 0x10
+		int 0x10	;make the call
 		ret
 
 printChars:
