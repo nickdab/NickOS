@@ -50,7 +50,7 @@ _start:
 
 	mov ah, 0x00		; change video mode
 	mov al, 0x10		; to graphics, 640x350 16 bit color
-	int 0x10		; call the bios
+	int 0x10		; call the BIOS
 	
 	
 	mov si, welcomeMsg
