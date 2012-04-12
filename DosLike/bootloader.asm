@@ -177,7 +177,7 @@ console:
 
 	.printPrompt:
 		;fill the buffer with spaces:
-		mov si, buffer
+		mov di, buffer
 		mov al, '*'
 		mov cx, 64
 		rep stosb
@@ -211,6 +211,10 @@ console:
 		.carriageReturn:
 				
 			.checkShutdown:
+				call newline
+				mov si, buffer
+				mov cx, 64
+				call printString
 				mov cx, SHTDWNSZ
 				mov si, shutdownCommand
 				call cmpStrToBuf
@@ -243,16 +247,16 @@ cmpStrToBuf:
 ;in: string --> si, cx --> size
 ;out: ax--> 0 if ne, 1 if e
 	.repeat:
-		mov di, buffer
-	
 		cmpsb
 		jne short .notEqual
 		cmp cx, 0
 		jne short .repeat
-		ret 1
+		mov ax, 1
+		ret 
 		
 		.notEqual:
-			ret 0
+			mov ax, 0
+			ret 
 	
 shutdown:
 	mov ah, 0x53
