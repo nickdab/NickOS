@@ -36,3 +36,6 @@ _start:
 	mov sp, ax
 	mov bp, ax
 	.reset:
+
+times 510-($-$$) db 0
+dw 0xAA55
