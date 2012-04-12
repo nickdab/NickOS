@@ -8,50 +8,8 @@
 
 	BITS 16
 	
-	[ORG 0]
-	 
-	jmp 0x07C0:_start;
-	nop
-
-; ----------------------------------------------------------
-; Disk Description Table
-
-OEMLabel		db "bootloader"	; Disk Label
-BytesPerSector		dw 512		; Bytes per sector
-SectorsPerCluster	db 1		; 1 sector in a cluster
-ReservedForBoot		dw 1		; Reserved Sectors for boot record
-NumberOfFats		db 2		; Number of copies of the FAT
-RootDirEntries		dw 224		; Number of entries in root dir
-
-LogicalSectors		dw 2880		; Number of Logical Sectors
-MediumByte		db 0xF0		; Medium descripter byte
-SectorsPerFat		dw 9		
-SectorsPerTrack		dw 18		
-Sides			dw 2		; number of sides/heads
-HiddenSectors		dd 0		
-LargeSectors		dd 0
-DriveNo			dw 0
-Signature		db 41		; 41=floppy 
-VolumeID		dd 0x0		; it can be any number
-VolumeLable		db "NickOS     "; volume label: any 11 chars
-FileSystem		db "FAT12   "	; File System Type
-
-; ----------------------------------------------------------
-
 _start:
-	cli			;no interrupts while we are doing this...we need to load the right location into
-				; all the segment registers before anything else touches this
-	mov ax, cs		;this loads the starting position into ax
-	
-	mov ds, ax
-	mov es, ax
-	
-	mov ax, 544		;now we set up the stack segment to 544 paragraphs
-	mov ss, ax
-	
-	mov ax, 4096		;and the stack pointer to give us 4K of stack space
-	mov sp, ax  
-
+	cli
 	;put the APM into Real Mode	
 	mov ah, 0x53		;Talk to the APM
 	mov al, 0x01		;Real Mode
