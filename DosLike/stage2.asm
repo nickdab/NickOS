@@ -8,7 +8,23 @@
 
 	BITS 16
 	
-_start:
+	jmp stage2_start
+	
+stage2_start:
+	mov ah, 0x00 ; change video mode
+	mov al, 0x10 ; to graphics, 640x350 16 bit color
+	int 0x10 ; call the BIOS
+
+	mov ax, es
+	mov ds, ax		
+
+	mov si, welcomeMsg
+	mov bl, 0x03		; display it in cyan
+	mov cx, welcomeMsgSize	; length of the message
+	mov dx, 0		; top left corner
+	call printString
+
+
 	cli
 	;put the APM into Real Mode	
 	mov ah, 0x53		;Talk to the APM
@@ -23,12 +39,6 @@ _start:
 	int 0x10		; call the BIOS
 	
 	
-	mov si, welcomeMsg
-	mov bl, 0x03		; display it in cyan
-	mov cx, welcomeMsgSize	; length of the message
-	mov dx, 0		; top left corner
-	call printString
-
 	call newline
 	call newline
 	
@@ -47,20 +57,6 @@ _start:
 	
 	helpCommand db "help"
 	HLPSZ equ $-helpCommand
-
-printTele:
-	mov ah, 0x0E		; this tells the BIOS we want to teletype print a character
-
-	.printChar:
-		lodsb		; load the string into al
-		cmp al, 0	; if al is 0, we're done
-		je short .done
-		;else
-		int 0x10	;make the interrupt
-		jmp short .printChar
-
-	.done:
-		ret
 
 printString:
 	mov ah, 0x13		; print string BIOS call
@@ -229,8 +225,7 @@ shutdown:
 	ret
 
 
-times 510-($-$$) db 0		;pad the rest of the disk with 0's
-dw 0xAA55			;This is the standard boot signature for floppy drives
+times 512-($-$$) db 0		;pad the rest of the disk with 0's		
 
 section .bss
 	buffer: resb 64
