@@ -182,7 +182,7 @@ console:
 		;fill the buffer with spaces:
 		mov di, buffer
 		mov al, '*'
-		mov cx, 12
+		mov cx, 64
 		rep stosb
 
 		mov si, prompt	;">>"
@@ -224,18 +224,6 @@ console:
 				je short .newline
 				call shutdown
 			
-			.checkHelp:
-				
-				mov cx, HLPSZ
-				mov si, helpCommand
-				
-				call cmpStrToBuf
-				
-				cmp ax, 0
-				je short .newline
-				call help
-				jmp .newline
-			
 		.newline:
 			call newline
 			jmp short .printPrompt
@@ -261,12 +249,6 @@ cmpStrToBuf:
 ;out: ax--> 0 if ne, 1 if e
 mov di, buffer
 	.repeat:
-		pushf
-		pusha
-		call newline
-		popa
-		popf
-	
 		cmpsb
 		jne short .notEqual
 		dec cx
