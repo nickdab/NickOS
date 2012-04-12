@@ -85,7 +85,10 @@ _start:
 	promptSize equ $-prompt
 
 	shutdownCommand db "shutdown"
-	SHTDWNSZ equ $-shutdown
+	SHTDWNSZ equ $-shutdownCommand
+	
+	helpCommand db "help"
+	HLPSZ equ $-helpCommand
 
 printTele:
 	mov ah, 0x0E		; this tells the BIOS we want to teletype print a character
@@ -179,7 +182,7 @@ console:
 		;fill the buffer with spaces:
 		mov di, buffer
 		mov al, '*'
-		mov cx, 64
+		mov cx, 12
 		rep stosb
 
 		mov si, prompt	;">>"
@@ -211,17 +214,27 @@ console:
 		.carriageReturn:
 				
 			.checkShutdown:
-				call newline
-				mov si, buffer
-				mov cx, 64
-				call printString
+
 				mov cx, SHTDWNSZ
 				mov si, shutdownCommand
+
 				call cmpStrToBuf
 			
 				cmp ax, 0
 				je short .newline
 				call shutdown
+			
+			.checkHelp:
+				
+				mov cx, HLPSZ
+				mov si, helpCommand
+				
+				call cmpStrToBuf
+				
+				cmp ax, 0
+				je short .newline
+				call help
+				jmp .newline
 			
 		.newline:
 			call newline
@@ -246,15 +259,24 @@ console:
 cmpStrToBuf:
 ;in: string --> si, cx --> size
 ;out: ax--> 0 if ne, 1 if e
+mov di, buffer
 	.repeat:
+		pushf
+		pusha
+		call newline
+		popa
+		popf
+	
 		cmpsb
 		jne short .notEqual
+		dec cx
 		cmp cx, 0
-		jne short .repeat
+		jg short .repeat
 		mov ax, 1
 		ret 
 		
 		.notEqual:
+			
 			mov ax, 0
 			ret 
 	
@@ -266,8 +288,9 @@ shutdown:
 	int 0x15
 	ret
 
+
 times 510-($-$$) db 0		;pad the rest of the disk with 0's
 dw 0xAA55			;This is the standard boot signature for floppy drives
 
 section .bss
-	buffer: resb 64 
+	buffer: resb 64
