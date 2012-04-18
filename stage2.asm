@@ -10,13 +10,24 @@
 	
 	jmp stage2_start
 	
-stage2_start:
+stage2_start:	
+	cli		
+	mov ax, 0
+	mov ss, ax
+	mov sp, 0x0FFFF
+	sti
+
+	cld
+	
+	mov ax, 0x2000
+	mov ds, ax
+	mov es, ax
+	mov fs, ax
+	mov gs, ax
+
 	mov ah, 0x00 ; change video mode
 	mov al, 0x10 ; to graphics, 640x350 16 bit color
 	int 0x10 ; call the BIOS
-
-	mov ax, es
-	mov ds, ax		
 
 	mov si, welcomeMsg
 	mov bl, 0x03		; display it in cyan
@@ -58,7 +69,8 @@ stage2_start:
 	helpCommand db "help"
 	HLPSZ equ $-helpCommand
 
-printString:
+printString:	
+
 	mov ah, 0x13		; print string BIOS call
 	mov al, 0x01		; update the cursor and make the attribute in bl apply to all characters
 

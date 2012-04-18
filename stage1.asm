@@ -83,6 +83,8 @@ allSysGo:			;we're ready for liftoff!
 	pusha
 
 read_root_dir:
+	popa
+	pusha
 	
 	stc
 	int 0x13
