@@ -41,7 +41,22 @@ _start:
 	mov bp, ax
 	
 	sti
+
+	cmp dl, 0
+	je noChange
+	mov [bootdev], dl
+	mov ah, 8
+	int 0x13
+	jc discErr	;shutdown the system
+	and cx, 0x3F	;3F is max sector number
+	mov [SectorsPerTrack], cx
+	movzx dx, dh
+	add dx, 1	;Head numbers start at 0, add 1 for total
+	mov [Sides],dx
 	
+	noChange:
+		mov ax, 0
+		
 	mov si, msg
 	call printTele
 	
@@ -59,11 +74,17 @@ _start:
 	mov si, dot
 	call printTele
 
-	
+	;infinite loop
+	jmp $	
 
 	msg db "Loading...",0
 	dot db ".",0
 	errLoading db "There was an error loading the second stage.",0
+	discErrMsg db "There was a fatal disk error.",0
+	
+	bootdev	db 0
+	cluster dw 0
+	pointer dw 0
 
 printTele:
 	.repeat:
@@ -77,8 +98,21 @@ printTele:
 
 		.end:
 			ret
+
+discErr:
+mov si, discErrMsg
+call printTele
+call shutdown
 	
-	
-	
+shutdown:
+mov ah, 0x53
+mov al, 0x07
+mov bx, 0x0001
+mov cx, 0x03
+int 0x15
+ret
+
 times 510-($-$$) db 0
 dw 0xAA55
+
+buffer:			; So we can peak into the stage2 loader after the break
