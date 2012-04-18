@@ -5,7 +5,10 @@ BITS 16
 jmp 0x07C0:_start 
 
 ;---------------------------------------------------------------------------
-reservedForBoot         dw 0            ; Reserved Sectors for boot record
+OEMLabel		db "NickOS"
+BytesPerSector		dw 512
+SectorsPerCluster	db 1
+reservedForBoot         dw 1            ; Reserved Sectors for boot record
 NumberOfFats            db 2            ; Number of copies of the FAT
 RootDirEntries          dw 224          ; Number of entries in root dir
 
@@ -30,7 +33,7 @@ _start:
 	mov ds, ax
 	mov es, ax
 	
-	mov ax, 544
+	add ax, 544
 	mov ss, ax
 	
 	mov ax, 4096
@@ -50,29 +53,13 @@ _start:
 	
 	mov si, dot
 	call printTele
-	
-	mov bx, 4097
 
-	mov ah, 0x02
-	mov al, 1
-	mov ch, 1
-	mov cl, 2
-	mov dh, 0
-	mov dl, 0
-	int 0x13
 	
-	jc .loadErr
 	
 	mov si, dot
 	call printTele
 
-	jmp 4097
 	
-	.loadErr:
-		mov si, errLoading
-		call printTele
-		cli
-		hlt
 
 	msg db "Loading...",0
 	dot db ".",0
