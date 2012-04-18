@@ -69,22 +69,197 @@ _start:
 	mov si, dot
 	call printTele
 
+allSysGo:			;we're ready for liftoff!
+	mov ax, 19		;root dir starts at logical sector 19	
+	call regSet13h		;set the registers to correct numbers	
+
+	mov si, buffer
 	
+	mov bx, si
 	
+	mov ah, 2		;read sector from floppy
+	mov al, 14		;read 14 sectors
+
+	pusha
+
+read_root_dir:
+	
+	stc
+	int 0x13
+
+	jc shutdown
+
+search_dir:
+	
+	pusha
+	mov si, dot
+	call printTele	
+	popa
+
+	popa
+	
+	mov di, buffer
+	mov cx, word [RootDirEntries] 	;search all entries
+	mov ax, 0			;search at offset 0
+
+nextRootEntry:
+	xchg cx, dx		;we use cx in the inner loop
+	
+	mov si, stage2FileName
+	mov cx, 11
+	rep cmpsb
+	je foundFileToLoad
+	
+	add ax, 32		;move to the next entry (32 bytes/entry)
+	
+	mov di, buffer		;point to next entry
+	add di, ax
+
+	xchg dx, cx
+	loop nextRootEntry
+	
+	mov si, fileNotFound
+	call printTele
+	jmp $
+
+foundFileToLoad:
+	
+	mov ax, word [es:di+0x0F]
+	mov word [cluster], ax
+
+	mov ax, 1	;sector 1 = first sector of first FAT
+	call regSet13h
+
+	mov di, buffer
+	mov bx, di
+	
+	mov ah, 2
+	mov al, 9
+
+	pusha
 	mov si, dot
 	call printTele
+	popa
 
+	pusha
+
+readFat:
+	
+	stc
+	int 0x13
+
+	jc shutdown
+
+readFatOK:
+	
+	popa
+	
+	mov ax, 0x2000
+	mov es, ax
+	mov bx, 0
+	
+	mov ah, 2
+	mov al, 1
+
+	push ax
+
+loadFileSector:
+	mov ax, word [cluster]
+	add ax, 31
+	
+	call regSet13h
+	
+	mov ax, 0x2000
+	mov es, ax
+	mov bx, word [pointer]
+	
+	pop ax
+	push ax
+	
+	stc
+	int 0x13
+	
+	jc shutdown
+	
+calcNextCluster:
+	mov ax, [cluster]
+	mov dx, 0
+	mov bx, 3
+	mul bx
+	mov bx, 2
+	div bx
+	mov si, buffer
+	add si, ax
+	mov ax, word [ds:si]
+	
+	or dx, dx
+	
+	jz even
+
+odd:
+	shr ax, 4
+	jmp short nextClusterCont
+
+even:
+	and ax, 0x0FFF
+
+nextClusterCont:
+	mov word [cluster], ax
+
+	cmp ax, 0x0FF8
+	jae done
+	
+	add word [pointer], 512
+	jmp loadFileSector
+
+done:
+	pop ax
+	mov dl, byte [bootdev]
+
+	jmp 0x2000:0x0000
 	;infinite loop
 	jmp $	
 
 	msg db "Loading...",0
 	dot db ".",0
-	errLoading db "There was an error loading the second stage.",0
-	discErrMsg db "There was a fatal disk error.",0
+	errLoading db "ErrLoadingSecondStage",0
+	discErrMsg db "diskerror.",0
+	fileNotFound db "not found",0
+	stage2FileName db "STAGE2  BIN"
 	
 	bootdev	db 0
 	cluster dw 0
 	pointer dw 0
+
+regSet13h:
+
+	;in: logical sector in AX, OUT: correct registers for int 13h	
+
+	push bx
+	push ax
+
+	mov bx, ax	;save logical sector
+	
+	;first, we will calculate the proper sector 
+	mov dx, 0
+	div word [SectorsPerTrack]
+	add dl, 0x01	;physical sectors start at 1
+	mov cl, dl	;int 13h wants sectors in cl
+	mov ax, bx
+
+	mov dx, 0	;now calc for the head
+	div word [SectorsPerTrack]
+	mov dx, 0
+	div word [Sides]
+	mov dh, dl	;head/side
+	mov ch, al	;track
+
+	pop ax
+	pop bx
+
+	mov dl, byte [bootdev]
+
+	ret
 
 printTele:
 	.repeat:
